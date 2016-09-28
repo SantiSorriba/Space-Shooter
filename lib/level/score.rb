@@ -12,4 +12,8 @@ attr_reader :points
     @text.draw(@points, Game::SCREEN_WIDTH - 120, 10, 1)
   end
 
+  def update_points!(points)
+    @points += points
+  end
+
 end

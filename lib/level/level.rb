@@ -5,13 +5,14 @@ require_relative 'enemy_ship'
 
 class Level
 
-  def initialize(window)
+  def initialize(window, enemy_ship_definitions)
     @enemy_ships = []
     @score = Score.new
     @window = window
     @player = PlayerShip.new
     @lasers = []
     @life_counter = LifeCounter.new
+    @enemy_ship_definitions = enemy_ship_definitions
   end
 
   def draw
@@ -31,7 +32,16 @@ class Level
     @lasers.each { |laser| laser.move! }
     @lasers.reject! { |laser| laser.is_out? }
     create_enemy_ship
-    @enemy_ships.each { |enemy_ships| enemy_ships.move! }
+    @enemy_ships.each { |enemy_ships|
+    enemy_ships.move!
+    if enemy_ships.was_hit?(@lasers)
+      enemy_ships.destroy!
+      @score.update_points!(enemy_ships.points)
+    elsif enemy_ships.is_out?
+      @life_counter.lose_life!
+      @window.show_game_over(@score.points) if @life_counter.game_over?
+    end}
+    @enemy_ships.reject!{ |ship| ship.is_out? || ship.destroyed? }
   end
 
   def button_down(id)
@@ -47,7 +57,8 @@ class Level
     current_time = Gosu::milliseconds
     if @last_enemy_ship_at.nil? || (@last_enemy_ship_at + time_between_enemy_ships < current_time)
       @last_enemy_ship_at = current_time
-      @enemy_ships << EnemyShip.new('enemy_4.png', 200, 10)
+      info = @enemy_ship_definitions.sample
+      @enemy_ships << EnemyShip.new(info[:image_path], info[:points], info[:velocity])
     end
   end
 
